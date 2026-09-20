@@ -10,3 +10,11 @@
 - Browser storage is treated as untrusted; schema validation and recovery protect rendering. Storage failures retain an in-memory session and surface a notice.
 - Reference research is signed-out and partial. Blocked/unvisited paths are documented in research.md.
 - Capture is a running, project-scoped session-store extractor. Startup/restart requirements and failed approaches are in CAPTURE-TEST.md. Captured entries are immutable.
+
+## Verification refinements
+
+- A rapid search test exposed an effect synchronizing URL state over newly typed input. Search submission now reads native FormData, with defaults keyed to navigation. The regression waits for rendered filter removal, not merely the earlier browser-URL update.
+- Native radio updates under React Router transition asynchronously. Browser assertions wait for checked state after activation.
+- Lazy off-screen images are loaded explicitly during the image audit; waiting for decode without requesting them caused a test timeout, not an application error.
+- Empty panels inside titled pages use level-two headings, preserving a single primary heading.
+- Gallery detail images are honest crops of the credited source photo. Selected quantity is clamped to remaining cart capacity.

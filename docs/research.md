@@ -16,7 +16,7 @@ Public amazon.com inspected in Codex's browser, signed out, with Philippines del
 | Cart | Opened header cart. “Your Amazon Cart is empty,” sign-in link and recommendations. No items added. | `recon/06-empty-cart.png` |
 | Orders and sign-in | Clicked Returns & Orders. Redirected to “Sign in or create account” with email/mobile field and Continue. Stopped before credentials or terms acceptance. | `recon/07-orders-sign-in-required.png` |
 | No matches | Searched “zzzxqvnomatch82736”. “No results for your search query,” help and browsing-history recommendations. | `recon/09-no-match.png` |
-| Narrow viewport | Requested 390×844 browser viewport. Desktop-user-agent site retained a desktop layout with horizontal overflow; screenshot is not evidence of Amazon's native mobile experience. Mobile user-agent flows remain unverified. | `recon/08-home-390-desktop-user-agent.png` |
+| Narrow viewport | Requested a 390×844 override, but the browser surface retained a wider desktop capture; the override was not reliably applied to this tab. This screenshot is desktop evidence only, not a verified 390px or native-mobile observation. Mobile Amazon flows remain unverified. | `recon/08-home-390-desktop-user-agent.png` |
 
 ## Blocked and unvisited steps — not claimed complete
 

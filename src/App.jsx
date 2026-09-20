@@ -1,59 +1,1635 @@
-import {useEffect,useRef,useState} from 'react';
-import {Link,NavLink,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router-dom';
-import {Search,ShoppingCart,Heart,Menu,X,MapPin,ChevronRight,ArrowRight,ArrowLeft,Check,CheckCircle2,Package,Truck,ShieldCheck,SlidersHorizontal,Trash2,Plus,Minus,BookOpen,Headphones,Home as HomeIcon,Shirt,RotateCcw,LockKeyhole} from 'lucide-react';
-import {categories,products,getProduct,getVariant,money} from './data/products.js';
-import {useShop} from './state/ShopContext.jsx';
-import {countItems,totalCents,itemKey,makeOrder} from './state/shop.js';
-function Logo(){return <Link to="/" className="logo" aria-label="Amazon rebuild home"><span>amazon<span className="logo-dot">.</span></span><span className="smile"/><small>rebuild</small></Link>;}
-function Header(){
- const {state}=useShop();const location=useLocation();const navigate=useNavigate();
- const params=new URLSearchParams(location.search);const [query,setQuery]=useState(params.get('q')||'');const [department,setDepartment]=useState(params.get('category')||'');const dialog=useRef(null);
- useEffect(()=>{const p=new URLSearchParams(location.search);setQuery(p.get('q')||'');setDepartment(p.get('category')||'');},[location.search]);
- function search(e){e.preventDefault();const p=new URLSearchParams();if(query.trim())p.set('q',query.trim());if(department)p.set('category',department);navigate(`/products?${p}`);}
- return <><a className="skip-link" href="#main">Skip to main content</a><div className="demo-strip">Independent educational demo <span>•</span> No real purchases or payments</div><header className="header"><div className="header-main"><Logo/><div className="delivery"><MapPin size={20}/><div><small>A little something for</small><strong>Your everyday</strong></div></div><form className="search" onSubmit={search} role="search"><label className="sr-only" htmlFor="search-department">Search department</label><select id="search-department" value={department} onChange={e=>setDepartment(e.target.value)}><option value="">All</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><label className="sr-only" htmlFor="site-search">Search products</label><input id="site-search" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search everyday favorites"/><button aria-label="Search"><Search size={25}/></button></form><Link to="/account" className="header-link account-link"><small>Hello, explorer</small><strong>Demo account</strong></Link><Link to="/orders" className="header-link orders-link"><small>Your demo</small><strong>Orders</strong></Link><Link to="/wishlist" className="header-icon" aria-label={`Wishlist, ${state.wishlist.length} saved products`}><Heart size={25}/></Link><Link to="/cart" className="cart-link" aria-label={`Cart, ${countItems(state.cart)} items`}><span className="cart-icon"><ShoppingCart size={32}/><b>{countItems(state.cart)}</b></span><strong>Cart</strong></Link></div><nav className="nav-bar" aria-label="Main navigation"><button onClick={()=>dialog.current.showModal()}><Menu size={19}/>All</button><NavLink to="/products">Shop all</NavLink>{categories.map(c=><Link key={c.id} to={`/products?category=${c.id}`}>{c.name}</Link>)}<Link to="/wishlist">Your wishlist</Link><span className="nav-note">Good finds. Every day.</span></nav></header><dialog ref={dialog} className="menu-dialog" onClick={e=>{if(e.target===dialog.current)dialog.current.close();}}><div className="drawer-heading"><strong>Explore your everyday</strong><button aria-label="Close menu" onClick={()=>dialog.current.close()}><X/></button></div><nav aria-label="All departments">{[{id:'all',name:'Shop all',path:'/products'},...categories.map(c=>({...c,path:`/products?category=${c.id}`})),{id:'wishlist',name:'Wishlist',path:'/wishlist'},{id:'orders',name:'Your demo orders',path:'/orders'},{id:'account',name:'Demo account',path:'/account'}].map(c=><Link key={c.id} to={c.path} onClick={()=>dialog.current.close()}>{c.name}<ChevronRight size={18}/></Link>)}</nav><p className="muted">A shopping experience built for learning. Nothing will be shipped.</p></dialog></>;
+import { useEffect, useRef, useState } from "react";
+import {
+  Link,
+  NavLink,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import {
+  Search,
+  ShoppingCart,
+  Heart,
+  Menu,
+  X,
+  MapPin,
+  ChevronRight,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Package,
+  Truck,
+  ShieldCheck,
+  SlidersHorizontal,
+  Plus,
+  Minus,
+  RotateCcw,
+  LockKeyhole,
+} from "lucide-react";
+import {
+  categories,
+  products,
+  getProduct,
+  getVariant,
+  money,
+} from "./data/products.js";
+import { useShop } from "./state/ShopContext.jsx";
+import { countItems, totalCents, itemKey, makeOrder } from "./state/shop.js";
+function Logo() {
+  return (
+    <Link to="/" className="logo" aria-label="Amazon rebuild home">
+      <span>
+        amazon<span className="logo-dot">.</span>
+      </span>
+      <span className="smile" />
+      <small>rebuild</small>
+    </Link>
+  );
 }
-function Footer(){return <footer><button className="back-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>Back to top ↑</button><div className="footer-inner"><div><Logo/><p>Everyday finds.<br/>A little inspiration.</p></div><div><h3>Explore</h3><Link to="/products">All products</Link><Link to="/products?category=home">Home & Kitchen</Link><Link to="/products?category=electronics">Electronics</Link></div><div><h3>Your corner</h3><Link to="/wishlist">Wishlist</Link><Link to="/orders">Demo orders</Link><Link to="/account">Demo account</Link></div><div className="footer-about"><h3>Made for learning</h3><p>An independent educational demo inspired by Amazon. All prices, reviews and orders are samples. No affiliation with Amazon.</p><Link to="/account">About this demo <ArrowRight size={14}/></Link></div></div><div className="footer-bottom">USD · English <span>No payment processed. Nothing shipped. Just exploring.</span></div></footer>;}
-function Rating({rating,count}){return <div className="rating"><span aria-label={`${rating} out of 5 stars`}>{rating.toFixed(1)} <span className="stars" aria-hidden="true">★★★★<span>★</span></span></span>{count&&<span className="rating-count">({count.toLocaleString()})</span>}</div>;}
-function ProductCard({product:p}){const {state,wish}=useShop();return <article className="product-card"><div className="product-image"><Link to={`/products/${p.id}`} tabIndex={-1} aria-hidden="true"><img src={p.image} alt="" loading="lazy"/></Link><button className={`wish-button ${state.wishlist.includes(p.id)?'selected':''}`} aria-label={`${state.wishlist.includes(p.id)?'Remove':'Save'} ${p.title} ${state.wishlist.includes(p.id)?'from':'to'} wishlist`} aria-pressed={state.wishlist.includes(p.id)} onClick={()=>wish(p.id)}><Heart size={19}/></button>{p.badge&&<span className="product-badge">{p.badge}</span>}</div><div className="product-info"><span className="eyebrow">{categories.find(c=>c.id===p.category)?.name}</span><Link to={`/products/${p.id}`} className="product-title">{p.title}</Link><Rating rating={p.rating} count={p.ratingCount}/><div className="card-price">{money(p.price)}</div><p className="shipping-line">FREE simulated delivery</p>{p.variants.length>1&&<span className="options-count">{p.variants.length} options available</span>}</div></article>;}
-function ProductGrid({items}){return <div className="product-grid">{items.map(p=><ProductCard key={p.id} product={p}/>)}</div>;}
-function Home(){
- return <div className="home-page"><section className="hero"><img src="/images/hero.jpg" alt="A calm, sunlit living room with natural furnishings"/><div className="hero-shade"/><div className="hero-copy"><div className="hero-kicker"><span/>A LITTLE INSPIRATION FOR EVERY DAY</div><h1>Good finds.<br/>Better everyday.</h1><p>Fresh favorites for your space, your routine,<br className="desktop-break"/> and everything in between.</p><Link to="/products" className="button dark-button">Explore the collection <ArrowRight size={18}/></Link><span className="hero-footnote">Thoughtfully picked. Ready to discover.</span></div><div className="hero-label">THE EVERYDAY EDIT <span>01 / 04</span></div></section><div className="home-content"><section className="category-cards" aria-label="Shop by department">{categories.map(c=><article key={c.id} className={`category-card category-${c.id}`}><h2>{c.tag}</h2><Link to={`/products?category=${c.id}`} className="category-image" aria-label={`Shop ${c.name}`}><img src={`/images/${c.image}.${c.id==='books'?'svg':'jpg'}`} alt={c.name}/><span className="category-overlay">{c.name}</span></Link><Link to={`/products?category=${c.id}`} className="text-link">Shop {c.name.toLowerCase()} <ArrowRight size={15}/></Link></article>)}</section><div className="benefits"><span><Truck size={21}/><span><strong>A little less to think about</strong><small>Free simulated shipping on every order</small></span></span><span><ShieldCheck size={21}/><span><strong>Explore with confidence</strong><small>Demo checkout. No real payments.</small></span></span><span><Heart size={21}/><span><strong>Keep your favorites close</strong><small>A wishlist that stays in this browser</small></span></span></div><section className="recommendations"><div className="section-heading"><div><span className="eyebrow">THE THINGS YOU’LL REACH FOR</span><h2>Everyday favorites</h2></div><Link className="text-link" to="/products">See all finds <ArrowRight size={16}/></Link></div><div className="home-products">{[products[0],products[8],products[15],products[18],products[5]].map(p=><ProductCard key={p.id} product={p}/>)}</div></section><section className="discovery-banner"><div><span className="eyebrow">MAKE ROOM FOR A SLOWER MOMENT</span><h2>Your next chapter starts here.</h2><p>A fresh perspective. A good story. A little time for yourself.</p><Link to="/products?category=books" className="button white-button">Explore the bookshelf <ArrowRight size={17}/></Link></div><div className="book-stack"><img src="/images/book2.svg" alt="A Place to Call Home book cover"/><img src="/images/book1.svg" alt="The Art of Slowing Down book cover"/><img src="/images/book3.svg" alt="Small Habits, Big Days book cover"/></div></section></div></div>;
+function Header() {
+  const { state } = useShop();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const dialog = useRef(null);
+  function search(e) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const query = String(data.get("q") || "");
+    const department = String(data.get("category") || "");
+    const p = new URLSearchParams();
+    if (query.trim()) p.set("q", query.trim());
+    if (department) p.set("category", department);
+    navigate(`/products?${p}`);
+  }
+  return (
+    <>
+      <a className="skip-link" href="#main">
+        Skip to main content
+      </a>
+      <div className="demo-strip">
+        Independent educational demo <span>•</span> No real purchases or
+        payments
+      </div>
+      <header className="header">
+        <div className="header-main">
+          <Logo />
+          <div className="delivery">
+            <MapPin size={20} />
+            <div>
+              <small>A little something for</small>
+              <strong>Your everyday</strong>
+            </div>
+          </div>
+          <form
+            key={location.search}
+            className="search"
+            onSubmit={search}
+            role="search"
+          >
+            <label className="sr-only" htmlFor="search-department">
+              Search department
+            </label>
+            <select
+              id="search-department"
+              name="category"
+              defaultValue={params.get("category") || ""}
+            >
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <label className="sr-only" htmlFor="site-search">
+              Search products
+            </label>
+            <input
+              id="site-search"
+              type="search"
+              name="q"
+              defaultValue={params.get("q") || ""}
+              placeholder="Search everyday favorites"
+            />
+            <button aria-label="Search">
+              <Search size={25} />
+            </button>
+          </form>
+          <Link to="/account" className="header-link account-link">
+            <small>Hello, explorer</small>
+            <strong>Demo account</strong>
+          </Link>
+          <Link to="/orders" className="header-link orders-link">
+            <small>Your demo</small>
+            <strong>Orders</strong>
+          </Link>
+          <Link
+            to="/wishlist"
+            className="header-icon"
+            aria-label={`Wishlist, ${state.wishlist.length} saved products`}
+          >
+            <Heart size={25} />
+          </Link>
+          <Link
+            to="/cart"
+            className="cart-link"
+            aria-label={`Cart, ${countItems(state.cart)} items`}
+          >
+            <span className="cart-icon">
+              <ShoppingCart size={32} />
+              <b>{countItems(state.cart)}</b>
+            </span>
+            <strong>Cart</strong>
+          </Link>
+        </div>
+        <nav className="nav-bar" aria-label="Main navigation">
+          <button onClick={() => dialog.current.showModal()}>
+            <Menu size={19} />
+            All
+          </button>
+          <NavLink to="/products">Shop all</NavLink>
+          {categories.map((c) => (
+            <Link key={c.id} to={`/products?category=${c.id}`}>
+              {c.name}
+            </Link>
+          ))}
+          <Link to="/wishlist">Your wishlist</Link>
+          <span className="nav-note">Good finds. Every day.</span>
+        </nav>
+      </header>
+      <dialog
+        ref={dialog}
+        className="menu-dialog"
+        onClick={(e) => {
+          if (e.target === dialog.current) dialog.current.close();
+        }}
+      >
+        <div className="drawer-heading">
+          <strong>Explore your everyday</strong>
+          <button
+            aria-label="Close menu"
+            onClick={() => dialog.current.close()}
+          >
+            <X />
+          </button>
+        </div>
+        <nav aria-label="All departments">
+          {[
+            { id: "all", name: "Shop all", path: "/products" },
+            ...categories.map((c) => ({
+              ...c,
+              path: `/products?category=${c.id}`,
+            })),
+            { id: "wishlist", name: "Wishlist", path: "/wishlist" },
+            { id: "orders", name: "Your demo orders", path: "/orders" },
+            { id: "account", name: "Demo account", path: "/account" },
+          ].map((c) => (
+            <Link key={c.id} to={c.path} onClick={() => dialog.current.close()}>
+              {c.name}
+              <ChevronRight size={18} />
+            </Link>
+          ))}
+        </nav>
+        <p className="muted">
+          A shopping experience built for learning. Nothing will be shipped.
+        </p>
+      </dialog>
+    </>
+  );
 }
-function Empty({icon:Icon=ShoppingCart,title,children,action='Explore all products',to='/products'}){return <div className="empty-state"><span className="empty-icon"><Icon size={38} strokeWidth={1.4}/></span><h1>{title}</h1><p>{children}</p><Link className="button yellow-button" to={to}>{action}<ArrowRight size={17}/></Link></div>;}
-function Catalog(){
- const [params,setParams]=useSearchParams();const [filtersOpen,setFiltersOpen]=useState(false);
- const q=params.get('q')||'', category=params.get('category')||'',rating=Number(params.get('rating'))||0,sort=params.get('sort')||'featured';
- const items=products.filter(p=>(!category||p.category===category)&&p.rating>=rating&&`${p.title} ${p.description}`.toLowerCase().includes(q.toLowerCase())).sort((a,b)=>sort==='price-asc'?a.price-b.price:sort==='price-desc'?b.price-a.price:sort==='rating'?b.rating-a.rating:a.featured-b.featured);
- function change(key,value){const next=new URLSearchParams(params);value?next.set(key,value):next.delete(key);setParams(next);}
- const chips=[q&&{key:'q',name:`“${q}”`},category&&{key:'category',name:categories.find(c=>c.id===category)?.name||category},rating>0&&{key:'rating',name:`${rating} stars & up`}].filter(Boolean);
- return <div className="catalog-page"><div className="catalog-intro"><span className="eyebrow">FIND YOUR NEXT EVERYDAY FAVORITE</span><h1>{q?`Results for “${q}”`:categories.find(c=>c.id===category)?.name||'A little of everything. A lot to love.'}</h1><p>Thoughtful finds for your home, your routine, and you.</p></div><div className="catalog-toolbar"><p><strong>{items.length}</strong> {items.length===1?'result':'results'} <span className="muted">in our curated collection</span></p><button className="filter-toggle secondary-button" aria-expanded={filtersOpen} aria-controls="catalog-filters" onClick={()=>setFiltersOpen(!filtersOpen)}><SlidersHorizontal size={17}/>Filters</button><label className="sort-label">Sort by <select value={sort} onChange={e=>change('sort',e.target.value)}><option value="featured">Featured</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="rating">Top rated</option></select></label></div><div className="catalog-layout"><aside id="catalog-filters" className={`filters ${filtersOpen?'open':''}`}><div className="filter-heading"><h2>Filters</h2>{chips.length>0&&<button className="link-button" onClick={()=>setParams(sort!=='featured'?{sort}:{})}>Clear all</button>}</div><fieldset><legend>Department</legend><label><input type="radio" name="category" checked={!category} onChange={()=>change('category','')}/>All departments <span>24</span></label>{categories.map(c=><label key={c.id}><input type="radio" name="category" checked={category===c.id} onChange={()=>change('category',c.id)}/>{c.name}<span>6</span></label>)}</fieldset><fieldset><legend>Customer rating <small>Sample ratings</small></legend>{[{value:0,label:'All ratings'},{value:4,label:'4 stars & up'},{value:4.5,label:'4.5 stars & up'},{value:4.8,label:'4.8 stars & up'}].map(r=><label key={r.value}><input type="radio" name="rating" checked={rating===r.value} onChange={()=>change('rating',r.value?String(r.value):'')}/>{r.label}</label>)}</fieldset><div className="filter-note"><Truck size={25}/><h3>Every find ships free.</h3><p>Simulated delivery on all demo orders. One less thing to think about.</p></div></aside><section className="catalog-results" aria-label="Product results"><div className="filter-chips" aria-live="polite">{chips.map(c=><button key={c.key} onClick={()=>change(c.key,'')} aria-label={`Remove filter ${c.name}`}>{c.name}<X size={13}/></button>)}</div>{items.length?<ProductGrid items={items}/>:<div className="empty-search"><Search size={35}/><h2>No finds this time.</h2><p>Try a different search or remove a filter to discover more.</p><button className="button yellow-button" onClick={()=>setParams({})}>Clear search & filters</button></div>}</section></div></div>;
+function Footer() {
+  return (
+    <footer>
+      <button
+        className="back-top"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
+        Back to top ↑
+      </button>
+      <div className="footer-inner">
+        <div>
+          <Logo />
+          <p>
+            Everyday finds.
+            <br />A little inspiration.
+          </p>
+        </div>
+        <div>
+          <h3>Explore</h3>
+          <Link to="/products">All products</Link>
+          <Link to="/products?category=home">Home & Kitchen</Link>
+          <Link to="/products?category=electronics">Electronics</Link>
+        </div>
+        <div>
+          <h3>Your corner</h3>
+          <Link to="/wishlist">Wishlist</Link>
+          <Link to="/orders">Demo orders</Link>
+          <Link to="/account">Demo account</Link>
+        </div>
+        <div className="footer-about">
+          <h3>Made for learning</h3>
+          <p>
+            An independent educational demo inspired by Amazon. All prices,
+            reviews and orders are samples. No affiliation with Amazon.
+          </p>
+          <Link to="/account">
+            About this demo <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        USD · English{" "}
+        <span>No payment processed. Nothing shipped. Just exploring.</span>
+      </div>
+    </footer>
+  );
 }
-function ProductDetail(){const {id}=useParams();const p=getProduct(id);return p?<ProductView key={id} product={p}/>:<NotFound title="That product is off the shelf."/>;}
-function ProductView({product:p}){
- const {state,add,wish}=useShop();const navigate=useNavigate();const [variant,setVariant]=useState(p.variants.find(v=>v.stock>0).id);const [quantity,setQuantity]=useState(1);const [zoom,setZoom]=useState(false);
- const v=getVariant(p,variant),existing=state.cart.find(i=>i.id===p.id&&i.variant===variant)?.quantity||0;const available=v.stock-existing;
- return <div className="detail-page"><nav className="breadcrumbs" aria-label="Breadcrumb"><Link to="/products">All products</Link><ChevronRight size={12}/><Link to={`/products?category=${p.category}`}>{categories.find(c=>c.id===p.category).name}</Link><ChevronRight size={12}/><span>{p.title}</span></nav><div className="product-detail"><div className="gallery"><div className="gallery-image"><img className={zoom?'zoomed':''} src={p.image} alt={p.title}/><button className="zoom-control" onClick={()=>setZoom(!zoom)} aria-pressed={zoom}>{zoom?'Show full image':'View closer'} <Plus size={15}/></button></div><div className="gallery-thumbnails"><button aria-label="Show product image" aria-pressed="true" onClick={()=>setZoom(false)}><img src={p.image} alt=""/></button><span>Illustrative product photo</span></div></div><div className="detail-info"><span className="eyebrow">THE EVERYDAY COLLECTION</span><h1>{p.title}</h1><a href="#reviews" className="review-link"><Rating rating={p.rating} count={p.ratingCount}/><span>Sample reviews</span></a><div className="detail-price">{money(v.price)}</div><p className="muted small">Sample price in USD</p><p className="detail-description">{p.description}</p><fieldset className="variant-fieldset"><legend>{p.category==='clothing'&&p.variants.length>1?'Size':p.category==='books'?'Format':'Option'}: <strong>{v.name}</strong></legend><div className="variant-options">{p.variants.map(option=><button key={option.id} className={variant===option.id?'active':''} disabled={!option.stock} aria-pressed={variant===option.id} onClick={()=>{setVariant(option.id);setQuantity(1);}}>{option.name}{!option.stock&&<small>Out of stock</small>}</button>)}</div></fieldset><div className="detail-features"><h2>Made for your everyday</h2><ul><li>Thoughtfully selected for our demo collection</li><li>{p.description}</li><li>Free simulated delivery. No real shipment.</li></ul></div></div><aside className="buy-box"><div className="buy-price">{money(v.price)}</div><p><Truck size={18}/> <strong>FREE simulated delivery</strong></p><p className="muted small">Explore the full shopping journey, without a real purchase.</p><p className={available>0?'in-stock':'out-stock'}>{available>0?'In stock':'Stock limit reached in cart'}</p><label className="quantity-select">Quantity<select value={quantity} onChange={e=>setQuantity(Number(e.target.value))} disabled={available<=0}>{Array.from({length:Math.max(1,Math.min(v.stock,available))},(_,i)=><option key={i+1}>{i+1}</option>)}</select></label><button className="button yellow-button" disabled={available<=0} onClick={()=>add(p.id,variant,quantity)}>Add to Cart</button><button className="button orange-button" disabled={available<=0} onClick={()=>{if(add(p.id,variant,quantity))navigate('/checkout');}}>Buy Now</button><div className="secure-note"><LockKeyhole size={14}/>No real payment required</div><dl><dt>Sold by</dt><dd>Rebuild demo</dd><dt>Shipping</dt><dd>Simulated · Free</dd><dt>Tax</dt><dd>Not calculated</dd></dl><button className="button secondary-button" onClick={()=>wish(p.id)} aria-pressed={state.wishlist.includes(p.id)}><Heart size={17}/>{state.wishlist.includes(p.id)?'Saved to wishlist':'Add to wishlist'}</button></aside></div><section id="reviews" className="reviews-section"><div><span className="eyebrow">A LITTLE PERSPECTIVE</span><h2>Sample customer reviews</h2><Rating rating={p.rating} count={p.ratingCount}/><p className="muted">Fictional reviews for demonstration.<br/>These are not real customer endorsements.</p></div><div className="review-cards">{p.reviews.map((r,i)=><article key={i}><div className="review-avatar">{r.name.charAt(0)}</div><span>{r.name}</span><div className="stars" aria-label={`${r.rating} out of 5 stars`}>{'★'.repeat(r.rating)}</div><h3>{r.title}</h3><p>{r.text}</p></article>)}</div></section><section className="recommendations related"><div className="section-heading"><h2>A few more good finds</h2><Link className="text-link" to={`/products?category=${p.category}`}>Explore more <ArrowRight size={15}/></Link></div><ProductGrid items={products.filter(other=>other.category===p.category&&other.id!==p.id).slice(0,4)}/></section></div>;
+function Rating({ rating, count }) {
+  return (
+    <div className="rating">
+      <span aria-label={`${rating} out of 5 stars`}>
+        {rating.toFixed(1)}{" "}
+        <span className="stars" aria-hidden="true">
+          ★★★★<span>★</span>
+        </span>
+      </span>
+      {count && (
+        <span className="rating-count">({count.toLocaleString()})</span>
+      )}
+    </div>
+  );
 }
-function Summary({checkout=false}){const {state}=useShop();return <aside className="order-summary"><h2>Order summary</h2><p className="summary-benefit"><CheckCircle2 size={18}/>Your demo order ships free</p><dl><dt>Items ({countItems(state.cart)})</dt><dd>{money(totalCents(state.cart))}</dd><dt>Simulated shipping</dt><dd className="green">FREE</dd><dt>Tax</dt><dd>Not calculated</dd></dl><div className="summary-total"><strong>Order total</strong><strong>{money(totalCents(state.cart))}</strong></div>{!checkout&&<Link to="/checkout" className="button yellow-button">Proceed to checkout<ChevronRight size={17}/></Link>}<p className="summary-disclaimer"><ShieldCheck size={17}/>This is a demo. No payment is processed and nothing will be shipped.</p></aside>;}
-function CartLine({item,saved=false}){
- const {state,dispatch,notify}=useShop();const p=getProduct(item.id),v=getVariant(p,item.variant),key=itemKey(item.id,item.variant);
- const atLimit=(state.cart.find(i=>itemKey(i.id,i.variant)===key)?.quantity||0)>=v.stock;
- return <article className="cart-line"><Link to={`/products/${p.id}`} className="cart-product-image"><img src={p.image} alt={p.title}/></Link><div className="cart-product-info"><Link to={`/products/${p.id}`} className="cart-title">{p.title}</Link><span className="in-stock small">In stock</span><p className="small">Option: <strong>{v.name}</strong></p><p className="muted small">FREE simulated delivery</p><div className="cart-actions">{!saved&&<div className="quantity-stepper"><button aria-label={`Decrease ${p.title} quantity`} disabled={item.quantity<=1} onClick={()=>dispatch({type:'QUANTITY',id:p.id,variant:v.id,quantity:item.quantity-1})}><Minus size={14}/></button><span aria-label={`Quantity ${item.quantity}`}>{item.quantity}</span><button aria-label={`Increase ${p.title} quantity`} disabled={item.quantity>=v.stock} onClick={()=>dispatch({type:'QUANTITY',id:p.id,variant:v.id,quantity:item.quantity+1})}><Plus size={14}/></button></div>}<button className="link-button" onClick={()=>{dispatch({type:saved?'DELETE_SAVED':'REMOVE',key});notify('Item removed.');}}>Remove</button><button className="link-button" disabled={saved&&atLimit} onClick={()=>{dispatch({type:saved?'RESTORE':'SAVE',key});notify(saved?'Moved available quantity to cart.':'Saved for later.');}}>{saved?(atLimit?'Cart at stock limit':'Move to cart'):'Save for later'}</button></div>{!saved&&item.quantity===v.stock&&<p className="small muted">Maximum available quantity: {v.stock}</p>}{saved&&<p className="small muted">Saved quantity: {item.quantity}</p>}</div><strong className="line-price">{money(v.price*item.quantity)}</strong></article>;
+function ProductCard({ product: p }) {
+  const { state, wish } = useShop();
+  return (
+    <article className="product-card">
+      <div className="product-image">
+        <Link to={`/products/${p.id}`} tabIndex={-1} aria-hidden="true">
+          <img src={p.image} alt="" loading="lazy" />
+        </Link>
+        <button
+          className={`wish-button ${state.wishlist.includes(p.id) ? "selected" : ""}`}
+          aria-label={`${state.wishlist.includes(p.id) ? "Remove" : "Save"} ${p.title} ${state.wishlist.includes(p.id) ? "from" : "to"} wishlist`}
+          aria-pressed={state.wishlist.includes(p.id)}
+          onClick={() => wish(p.id)}
+        >
+          <Heart size={19} />
+        </button>
+        {p.badge && <span className="product-badge">{p.badge}</span>}
+      </div>
+      <div className="product-info">
+        <span className="eyebrow">
+          {categories.find((c) => c.id === p.category)?.name}
+        </span>
+        <Link to={`/products/${p.id}`} className="product-title">
+          {p.title}
+        </Link>
+        <Rating rating={p.rating} count={p.ratingCount} />
+        <div className="card-price">{money(p.price)}</div>
+        <p className="shipping-line">FREE simulated delivery</p>
+        {p.variants.length > 1 && (
+          <span className="options-count">
+            {p.variants.length} options available
+          </span>
+        )}
+      </div>
+    </article>
+  );
 }
-function Cart(){const {state}=useShop();return <div className="standard-page"><div className="page-heading"><span className="eyebrow">YOUR EVERYDAY FINDS</span><h1>Shopping Cart <span>({countItems(state.cart)})</span></h1></div>{state.cart.length?<div className="shopping-layout"><section className="white-panel"><div className="cart-panel-top"><span>Ready when you are.</span><span>Price</span></div>{state.cart.map(item=><CartLine key={itemKey(item.id,item.variant)} item={item}/>)}<div className="cart-subtotal">Subtotal ({countItems(state.cart)} items): <strong>{money(totalCents(state.cart))}</strong></div></section><Summary/></div>:<Empty title="Your cart is waiting for a good find.">Discover a new favorite and make it part of your everyday.</Empty>}{state.saved.length>0&&<section className="white-panel saved-section"><h2>Saved for later ({state.saved.length})</h2>{state.saved.map(item=><CartLine key={itemKey(item.id,item.variant)} item={item} saved/>)}</section>}<Link to="/products" className="text-link continue-shopping"><ArrowLeft size={16}/>Continue exploring</Link></div>;}
-function Wishlist(){const {state,wish,add}=useShop();return <div className="standard-page"><div className="page-heading"><span className="eyebrow">KEEP THE GOOD FINDS CLOSE</span><h1>Your wishlist <span>({state.wishlist.length})</span></h1><p>All your favorites, saved in this browser for another day.</p></div>{state.wishlist.length?<div className="wishlist-grid">{state.wishlist.map(id=>{const p=getProduct(id),v=p.variants.find(v=>v.stock>0);return <div className="wishlist-card" key={id}><ProductCard product={p}/><div className="wishlist-actions">{p.variants.length>1?<Link to={`/products/${id}`} className="button yellow-button">Choose options</Link>:<button className="button yellow-button" onClick={()=>add(id,v.id)}>Add to Cart</button>}<button className="link-button" onClick={()=>wish(id)}>Remove</button></div></div>;})}</div>:<Empty icon={Heart} title="A home for your next favorites.">Tap a heart on any product to keep it here. Your wishlist is saved on this browser.</Empty>}</div>;}
-function Checkout(){
- const {state,dispatch}=useShop();const navigate=useNavigate();const submitting=useRef(false);const [placing,setPlacing]=useState(false);const [form,setForm]=useState({name:'',email:'',address:'',city:'',region:'',postal:'',country:'United States'});const [errors,setErrors]=useState({});const formRef=useRef(null);
- const fields=[['name','Full name','name'],['email','Email address','email'],['address','Street address','street-address'],['city','City','address-level2'],['region','State / province','address-level1'],['postal','Postal code','postal-code']];
- function submit(e){e.preventDefault();if(submitting.current)return;const next={};for(const [name,label] of fields)if(!form[name].trim())next[name]=`Enter your ${label.toLowerCase()}.`;if(form.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))next.email='Enter a valid email address.';if(form.postal&&form.postal.trim().length<3)next.postal='Enter a postal code with at least 3 characters.';setErrors(next);if(Object.keys(next).length){requestAnimationFrame(()=>formRef.current?.querySelector('[aria-invalid="true"]')?.focus());return;}submitting.current=true;setPlacing(true);const order=makeOrder(state.cart);dispatch({type:'ORDER',order});setForm({name:'',email:'',address:'',city:'',region:'',postal:'',country:'United States'});navigate(`/order-success/${order.id}`,{replace:true});}
- if(!state.cart.length)return <div className="standard-page"><Empty title="Let’s find something first.">Add an item to your cart before starting your demo checkout.</Empty></div>;
- return <div className="checkout-page"><div className="checkout-heading"><Link to="/cart" className="text-link"><ArrowLeft size={15}/>Back to cart</Link><h1>Demo checkout</h1><span><LockKeyhole size={16}/>No real payment</span></div><div className="checkout-notice"><ShieldCheck size={21}/><div><strong>You’re trying a shopping simulation.</strong><p>No payment is processed and nothing will be shipped. Use sample details. Your address and email stay only in memory and are never saved.</p></div></div><div className="shopping-layout checkout-layout"><form ref={formRef} className="checkout-form" noValidate onSubmit={submit}><section className="white-panel checkout-step"><div className="step-heading"><span>1</span><h2>Shipping details</h2></div><div className="form-grid">{fields.map(([name,label,auto])=><div className={`form-field ${name==='address'?'wide':''}`} key={name}><label htmlFor={name}>{label} <span aria-hidden="true">*</span></label><input id={name} name={name} autoComplete={auto} type={name==='email'?'email':'text'} value={form[name]} required aria-invalid={!!errors[name]} aria-describedby={errors[name]?`${name}-error`:undefined} onChange={e=>setForm({...form,[name]:e.target.value})}/>{errors[name]&&<span id={`${name}-error`} className="field-error">{errors[name]}</span>}</div>)}<div className="form-field wide"><label htmlFor="country">Country</label><select id="country" autoComplete="country-name" value={form.country} onChange={e=>setForm({...form,country:e.target.value})}><option>United States</option><option>Philippines</option><option>Canada</option><option>United Kingdom</option><option>Australia</option><option>Other</option></select></div></div></section><section className="white-panel checkout-step"><div className="step-heading"><span>2</span><h2>Demo payment</h2></div><label className="payment-option"><input type="radio" checked readOnly name="payment"/><div><strong>Simulated payment</strong><small>No card details. No charges. Just a demo.</small></div><ShieldCheck size={24}/></label></section><section className="white-panel checkout-step"><div className="step-heading"><span>3</span><h2>Review your finds</h2></div>{state.cart.map(i=>{const p=getProduct(i.id),v=getVariant(p,i.variant);return <div className="checkout-item" key={itemKey(i.id,i.variant)}><img src={p.image} alt={p.title}/><div><strong>{p.title}</strong><span>{v.name} · Quantity: {i.quantity}</span><span className="green">Free simulated shipping</span></div><b>{money(v.price*i.quantity)}</b></div>;})}<div className="place-order"><button className="button yellow-button" disabled={placing} type="submit">{placing?'Placing demo order…':'Place demo order'}<ArrowRight size={18}/></button><p>No payment will be processed. No items will be shipped.</p></div></section></form><Summary checkout/></div></div>;
+function ProductGrid({ items }) {
+  return (
+    <div className="product-grid">
+      {items.map((p) => (
+        <ProductCard key={p.id} product={p} />
+      ))}
+    </div>
+  );
 }
-function OrderItems({order}){return <div>{order.items.map((i,index)=><div className="order-item" key={`${i.id}-${i.variant}-${index}`}><Link to={`/products/${i.id}`}><img src={i.image} alt={i.title}/></Link><div><Link to={`/products/${i.id}`}><strong>{i.title}</strong></Link><p className="muted small">{i.variant} · Quantity: {i.quantity}</p></div><strong>{money(i.price*i.quantity)}</strong></div>)}</div>;}
-function OrderSuccess(){const {id}=useParams();const {state}=useShop();const order=state.orders.find(o=>o.id===id);if(!order)return <NotFound title="We couldn’t find that demo order."/>;return <div className="success-page"><div className="success-heading"><span><Check size={38}/></span><p className="eyebrow">A GOOD FIND, ALL THE WAY THROUGH</p><h1>Your demo order is in!</h1><p>You’ve completed the shopping journey.<br/>No payment was processed and nothing will be shipped.</p></div><section className="white-panel confirmation"><div className="confirmation-top"><div><span className="muted small">DEMO ORDER</span><strong>{order.id.slice(-8).toUpperCase()}</strong></div><div><span className="muted small">ORDER TOTAL</span><strong>{money(order.total)}</strong></div><span className="status-badge"><Check size={14}/>Simulated</span></div><OrderItems order={order}/><div className="confirmation-bottom"><Link to={`/orders/${order.id}`} className="button yellow-button">View order details<ArrowRight size={17}/></Link><Link to="/products" className="text-link">Keep exploring</Link></div></section><p className="muted small text-center">Saved on this browser. Personal checkout details were not saved.</p></div>;}
-function Orders(){const {state}=useShop();return <div className="standard-page orders-page"><div className="page-heading"><span className="eyebrow">YOUR FINDS, ALL IN ONE PLACE</span><h1>Your demo orders</h1><p>Saved in this browser. Every order here is a simulation.</p></div>{state.orders.length?state.orders.map(order=><article className="order-card" key={order.id}><header><div><small>ORDER PLACED</small><span>{new Date(order.createdAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</span></div><div><small>TOTAL</small><span>{money(order.total)}</span></div><div className="order-card-id"><small>ORDER #{order.id.slice(-8).toUpperCase()}</small><Link to={`/orders/${order.id}`}>View order details <ChevronRight size={14}/></Link></div></header><div className="order-card-body"><span className="status-badge"><Check size={14}/>Simulated order placed</span><OrderItems order={order}/></div></article>):<Empty icon={Package} title="Your story starts with a good find.">Complete a demo checkout and your order will appear here. No sign-in needed.</Empty>}</div>;}
-function OrderDetail(){const {id}=useParams();const {state}=useShop();const order=state.orders.find(o=>o.id===id);if(!order)return <NotFound title="We couldn’t find that demo order."/>;return <div className="standard-page orders-page"><Link to="/orders" className="text-link"><ArrowLeft size={16}/>All demo orders</Link><div className="page-heading"><h1>Order details</h1><p>Order #{order.id.slice(-8).toUpperCase()} · {new Date(order.createdAt).toLocaleString('en-US')}</p></div><div className="checkout-notice"><ShieldCheck/><p>This is a simulated order. No payment was processed and nothing will be shipped. Personal details are not stored.</p></div><section className="white-panel"><span className="status-badge"><Check size={14}/>{order.status}</span><OrderItems order={order}/><div className="order-detail-totals"><p>Simulated shipping <strong>FREE</strong></p><p>Tax <span>Not calculated</span></p><p><strong>Order total</strong><strong>{money(order.total)}</strong></p></div></section></div>;}
-function Account(){const {state,dispatch,notify}=useShop();const [confirm,setConfirm]=useState(false);return <div className="standard-page account-page"><div className="page-heading"><span className="eyebrow">MAKE YOURSELF AT HOME</span><h1>Your demo account</h1><p>No password, no sign-in. Just your finds, saved in this browser.</p></div><div className="account-cards"><Link to="/orders"><Package/><div><h2>Your orders</h2><p>{state.orders.length} demo orders · View your shopping journey</p></div><ChevronRight/></Link><Link to="/wishlist"><Heart/><div><h2>Your wishlist</h2><p>{state.wishlist.length} favorites · Keep a little inspiration</p></div><ChevronRight/></Link><Link to="/cart"><ShoppingCart/><div><h2>Your cart</h2><p>{countItems(state.cart)} items · Pick up where you left off</p></div><ChevronRight/></Link></div><section className="white-panel about-demo"><ShieldCheck size={30}/><div><h2>A real experience. A simulated purchase.</h2><p>This independent educational project explores a complete shopping journey. Product details, USD prices, ratings and reviews are samples. Orders, delivery and payment are simulated. It is not affiliated with Amazon.</p><p>Only your cart, saved products, wishlist and non-sensitive order details are stored in this browser. Your checkout name, email and address are kept in memory only and are discarded when you leave checkout.</p></div></section><section className="reset-panel"><div><h2>A fresh start</h2><p>Clear this demo’s cart, saved items, wishlist and order history.</p></div>{!confirm?<button className="button secondary-button" onClick={()=>setConfirm(true)}><RotateCcw size={16}/>Reset demo data</button>:<div className="reset-confirm" role="alert"><strong>Clear all demo data on this browser?</strong><button className="button danger-button" onClick={()=>{dispatch({type:'RESET'});setConfirm(false);notify('Demo data cleared. A fresh start!');}}>Yes, reset demo data</button><button className="link-button" onClick={()=>setConfirm(false)}>Cancel</button></div>}</section></div>;}
-function NotFound({title='This page took a little detour.'}){return <div className="standard-page"><Empty icon={Search} title={title} action="Back to exploring">The link may be outdated, or the item may not be saved on this browser. There are still plenty of good finds waiting.</Empty></div>;}
-function ScrollAndFocus(){const {pathname}=useLocation();useEffect(()=>{window.scrollTo(0,0);document.getElementById('main')?.focus({preventScroll:true});},[pathname]);return null;}
-export default function App(){const {notice,warning}=useShop();return <><Header/><ScrollAndFocus/>{warning&&<div role="alert" className="storage-warning">{warning}</div>}<main id="main" tabIndex={-1}><Routes><Route path="/" element={<Home/>}/><Route path="/products" element={<Catalog/>}/><Route path="/products/:id" element={<ProductDetail/>}/><Route path="/cart" element={<Cart/>}/><Route path="/wishlist" element={<Wishlist/>}/><Route path="/checkout" element={<Checkout/>}/><Route path="/order-success/:id" element={<OrderSuccess/>}/><Route path="/orders" element={<Orders/>}/><Route path="/orders/:id" element={<OrderDetail/>}/><Route path="/account" element={<Account/>}/><Route path="*" element={<NotFound/>}/></Routes></main><Footer/><div className={`toast ${notice?'visible':''}`} role="status" aria-live="polite">{notice&&<><CheckCircle2 size={21}/><span>{notice.text}</span><Link to="/cart">View cart</Link></>}</div></>;}
+function Home() {
+  return (
+    <div className="home-page">
+      <section className="hero">
+        <img
+          src="/images/hero.jpg"
+          alt="A calm, sunlit living room with natural furnishings"
+        />
+        <div className="hero-shade" />
+        <div className="hero-copy">
+          <div className="hero-kicker">
+            <span />A LITTLE INSPIRATION FOR EVERY DAY
+          </div>
+          <h1>
+            Good finds.
+            <br />
+            Better everyday.
+          </h1>
+          <p>
+            Fresh favorites for your space, your routine,
+            <br className="desktop-break" /> and everything in between.
+          </p>
+          <Link to="/products" className="button dark-button">
+            Explore the collection <ArrowRight size={18} />
+          </Link>
+          <span className="hero-footnote">
+            Thoughtfully picked. Ready to discover.
+          </span>
+        </div>
+        <div className="hero-label">
+          THE EVERYDAY EDIT <span>CURATED FOR YOU</span>
+        </div>
+      </section>
+      <div className="home-content">
+        <section className="category-cards" aria-label="Shop by department">
+          {categories.map((c) => (
+            <article key={c.id} className={`category-card category-${c.id}`}>
+              <h2>{c.tag}</h2>
+              <Link
+                to={`/products?category=${c.id}`}
+                className="category-image"
+                aria-label={`Shop ${c.name}`}
+              >
+                <img
+                  src={`/images/${c.image}.${c.id === "books" ? "svg" : "jpg"}`}
+                  alt={c.name}
+                />
+                <span className="category-overlay">{c.name}</span>
+              </Link>
+              <Link to={`/products?category=${c.id}`} className="text-link">
+                Shop {c.name.toLowerCase()} <ArrowRight size={15} />
+              </Link>
+            </article>
+          ))}
+        </section>
+        <div className="benefits">
+          <span>
+            <Truck size={21} />
+            <span>
+              <strong>A little less to think about</strong>
+              <small>Free simulated shipping on every order</small>
+            </span>
+          </span>
+          <span>
+            <ShieldCheck size={21} />
+            <span>
+              <strong>Explore with confidence</strong>
+              <small>Demo checkout. No real payments.</small>
+            </span>
+          </span>
+          <span>
+            <Heart size={21} />
+            <span>
+              <strong>Keep your favorites close</strong>
+              <small>A wishlist that stays in this browser</small>
+            </span>
+          </span>
+        </div>
+        <section className="recommendations">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">THE THINGS YOU’LL REACH FOR</span>
+              <h2>Everyday favorites</h2>
+            </div>
+            <Link className="text-link" to="/products">
+              See all finds <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="home-products">
+            {[
+              products[0],
+              products[8],
+              products[15],
+              products[18],
+              products[5],
+            ].map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+        <section className="discovery-banner">
+          <div>
+            <span className="eyebrow">MAKE ROOM FOR A SLOWER MOMENT</span>
+            <h2>Your next chapter starts here.</h2>
+            <p>
+              A fresh perspective. A good story. A little time for yourself.
+            </p>
+            <Link to="/products?category=books" className="button white-button">
+              Explore the bookshelf <ArrowRight size={17} />
+            </Link>
+          </div>
+          <div className="book-stack">
+            <img
+              src="/images/book2.svg"
+              alt="A Place to Call Home book cover"
+            />
+            <img
+              src="/images/book1.svg"
+              alt="The Art of Slowing Down book cover"
+            />
+            <img
+              src="/images/book3.svg"
+              alt="Small Habits, Big Days book cover"
+            />
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+function Empty({
+  headingLevel = 1,
+  icon: Icon = ShoppingCart,
+  title,
+  children,
+  action = "Explore all products",
+  to = "/products",
+}) {
+  return (
+    <div className="empty-state">
+      <span className="empty-icon">
+        <Icon size={38} strokeWidth={1.4} />
+      </span>
+      {headingLevel === 1 ? <h1>{title}</h1> : <h2>{title}</h2>}
+      <p>{children}</p>
+      <Link className="button yellow-button" to={to}>
+        {action}
+        <ArrowRight size={17} />
+      </Link>
+    </div>
+  );
+}
+function Catalog() {
+  const [params, setParams] = useSearchParams();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const q = params.get("q") || "",
+    category = params.get("category") || "",
+    rating = Number(params.get("rating")) || 0,
+    sort = params.get("sort") || "featured";
+  const items = products
+    .filter(
+      (p) =>
+        (!category || p.category === category) &&
+        p.rating >= rating &&
+        `${p.title} ${p.description}`.toLowerCase().includes(q.toLowerCase()),
+    )
+    .sort((a, b) =>
+      sort === "price-asc"
+        ? a.price - b.price
+        : sort === "price-desc"
+          ? b.price - a.price
+          : sort === "rating"
+            ? b.rating - a.rating
+            : a.featured - b.featured,
+    );
+  function change(key, value) {
+    const next = new URLSearchParams(params);
+    value ? next.set(key, value) : next.delete(key);
+    setParams(next);
+  }
+  const chips = [
+    q && { key: "q", name: `“${q}”` },
+    category && {
+      key: "category",
+      name: categories.find((c) => c.id === category)?.name || category,
+    },
+    rating > 0 && { key: "rating", name: `${rating} stars & up` },
+  ].filter(Boolean);
+  return (
+    <div className="catalog-page">
+      <div className="catalog-intro">
+        <span className="eyebrow">FIND YOUR NEXT EVERYDAY FAVORITE</span>
+        <h1>
+          {q
+            ? `Results for “${q}”`
+            : categories.find((c) => c.id === category)?.name ||
+              "A little of everything. A lot to love."}
+        </h1>
+        <p>Thoughtful finds for your home, your routine, and you.</p>
+      </div>
+      <div className="catalog-toolbar">
+        <p>
+          <strong>{items.length}</strong>{" "}
+          {items.length === 1 ? "result" : "results"}{" "}
+          <span className="muted">in our curated collection</span>
+        </p>
+        <button
+          className="filter-toggle secondary-button"
+          aria-expanded={filtersOpen}
+          aria-controls="catalog-filters"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+        >
+          <SlidersHorizontal size={17} />
+          Filters
+        </button>
+        <label className="sort-label">
+          Sort by{" "}
+          <select value={sort} onChange={(e) => change("sort", e.target.value)}>
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Top rated</option>
+          </select>
+        </label>
+      </div>
+      <div className="catalog-layout">
+        <aside
+          id="catalog-filters"
+          className={`filters ${filtersOpen ? "open" : ""}`}
+        >
+          <div className="filter-heading">
+            <h2>Filters</h2>
+            {chips.length > 0 && (
+              <button
+                className="link-button"
+                onClick={() => setParams(sort !== "featured" ? { sort } : {})}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+          <fieldset>
+            <legend>Department</legend>
+            <label>
+              <input
+                type="radio"
+                name="category"
+                checked={!category}
+                onChange={() => change("category", "")}
+              />
+              All departments <span>24</span>
+            </label>
+            {categories.map((c) => (
+              <label key={c.id}>
+                <input
+                  type="radio"
+                  name="category"
+                  checked={category === c.id}
+                  onChange={() => change("category", c.id)}
+                />
+                {c.name}
+                <span>6</span>
+              </label>
+            ))}
+          </fieldset>
+          <fieldset>
+            <legend>
+              Customer rating <small>Sample ratings</small>
+            </legend>
+            {[
+              { value: 0, label: "All ratings" },
+              { value: 4, label: "4 stars & up" },
+              { value: 4.5, label: "4.5 stars & up" },
+              { value: 4.8, label: "4.8 stars & up" },
+            ].map((r) => (
+              <label key={r.value}>
+                <input
+                  type="radio"
+                  name="rating"
+                  checked={rating === r.value}
+                  onChange={() =>
+                    change("rating", r.value ? String(r.value) : "")
+                  }
+                />
+                {r.label}
+              </label>
+            ))}
+          </fieldset>
+          <div className="filter-note">
+            <Truck size={25} />
+            <h3>Every find ships free.</h3>
+            <p>
+              Simulated delivery on all demo orders. One less thing to think
+              about.
+            </p>
+          </div>
+        </aside>
+        <section className="catalog-results" aria-label="Product results">
+          <div className="filter-chips" aria-live="polite">
+            {chips.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => change(c.key, "")}
+                aria-label={`Remove filter ${c.name}`}
+              >
+                {c.name}
+                <X size={13} />
+              </button>
+            ))}
+          </div>
+          {items.length ? (
+            <ProductGrid items={items} />
+          ) : (
+            <div className="empty-search">
+              <Search size={35} />
+              <h2>No finds this time.</h2>
+              <p>Try a different search or remove a filter to discover more.</p>
+              <button
+                className="button yellow-button"
+                onClick={() => setParams({})}
+              >
+                Clear search & filters
+              </button>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+function ProductDetail() {
+  const { id } = useParams();
+  const p = getProduct(id);
+  return p ? (
+    <ProductView key={id} product={p} />
+  ) : (
+    <NotFound title="That product is off the shelf." />
+  );
+}
+function ProductView({ product: p }) {
+  const { state, add, wish } = useShop();
+  const navigate = useNavigate();
+  const [variant, setVariant] = useState(
+    p.variants.find((v) => v.stock > 0).id,
+  );
+  const [quantity, setQuantity] = useState(1);
+  const [zoom, setZoom] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
+  const v = getVariant(p, variant),
+    existing =
+      state.cart.find((i) => i.id === p.id && i.variant === variant)
+        ?.quantity || 0;
+  const available = v.stock - existing;
+  const selectedQuantity = Math.min(quantity, Math.max(1, available));
+  return (
+    <div className="detail-page">
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/products">All products</Link>
+        <ChevronRight size={12} />
+        <Link to={`/products?category=${p.category}`}>
+          {categories.find((c) => c.id === p.category).name}
+        </Link>
+        <ChevronRight size={12} />
+        <span>{p.title}</span>
+      </nav>
+      <div className="product-detail">
+        <div className="gallery">
+          <div className="gallery-image">
+            <img
+              className={zoom ? "zoomed" : ""}
+              src={p.images[imageIndex]}
+              alt={`${p.title}${imageIndex ? " detail crop" : ""}`}
+            />
+            <button
+              className="zoom-control"
+              onClick={() => setZoom(!zoom)}
+              aria-pressed={zoom}
+            >
+              {zoom ? "Show full image" : "View closer"} <Plus size={15} />
+            </button>
+          </div>
+          <div className="gallery-thumbnails">
+            {p.images.map((image, i) => (
+              <button
+                key={image}
+                aria-label={i ? "Show detail crop" : "Show full product image"}
+                aria-pressed={imageIndex === i}
+                onClick={() => {
+                  setImageIndex(i);
+                  setZoom(false);
+                }}
+              >
+                <img src={image} alt="" />
+              </button>
+            ))}
+            <span>Illustrative photo{imageIndex ? " · Detail crop" : ""}</span>
+          </div>
+        </div>
+        <div className="detail-info">
+          <span className="eyebrow">THE EVERYDAY COLLECTION</span>
+          <h1>{p.title}</h1>
+          <a href="#reviews" className="review-link">
+            <Rating rating={p.rating} count={p.ratingCount} />
+            <span>Sample reviews</span>
+          </a>
+          <div className="detail-price">{money(v.price)}</div>
+          <p className="muted small">Sample price in USD</p>
+          <p className="detail-description">{p.description}</p>
+          <fieldset className="variant-fieldset">
+            <legend>
+              {p.category === "clothing" && p.variants.length > 1
+                ? "Size"
+                : p.category === "books"
+                  ? "Format"
+                  : "Option"}
+              : <strong>{v.name}</strong>
+            </legend>
+            <div className="variant-options">
+              {p.variants.map((option) => (
+                <button
+                  key={option.id}
+                  className={variant === option.id ? "active" : ""}
+                  disabled={!option.stock}
+                  aria-pressed={variant === option.id}
+                  onClick={() => {
+                    setVariant(option.id);
+                    setQuantity(1);
+                  }}
+                >
+                  {option.name}
+                  {!option.stock && <small>Out of stock</small>}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <div className="detail-features">
+            <h2>Made for your everyday</h2>
+            <ul>
+              <li>Thoughtfully selected for our demo collection</li>
+              <li>{p.description}</li>
+              <li>Free simulated delivery. No real shipment.</li>
+            </ul>
+          </div>
+        </div>
+        <aside className="buy-box">
+          <div className="buy-price">{money(v.price)}</div>
+          <p>
+            <Truck size={18} /> <strong>FREE simulated delivery</strong>
+          </p>
+          <p className="muted small">
+            Explore the full shopping journey, without a real purchase.
+          </p>
+          <p className={available > 0 ? "in-stock" : "out-stock"}>
+            {available > 0 ? "In stock" : "Stock limit reached in cart"}
+          </p>
+          <div className="quantity-select">
+            <label htmlFor="product-quantity">Quantity</label>
+            <select
+              id="product-quantity"
+              value={selectedQuantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              disabled={available <= 0}
+            >
+              {Array.from(
+                { length: Math.max(1, Math.min(v.stock, available)) },
+                (_, i) => (
+                  <option key={i + 1}>{i + 1}</option>
+                ),
+              )}
+            </select>
+          </div>
+          <button
+            className="button yellow-button"
+            disabled={available <= 0}
+            onClick={() => add(p.id, variant, selectedQuantity)}
+          >
+            Add to Cart
+          </button>
+          <button
+            className="button orange-button"
+            disabled={available <= 0}
+            onClick={() => {
+              if (add(p.id, variant, selectedQuantity)) navigate("/checkout");
+            }}
+          >
+            Buy Now
+          </button>
+          <div className="secure-note">
+            <LockKeyhole size={14} />
+            No real payment required
+          </div>
+          <dl>
+            <dt>Sold by</dt>
+            <dd>Rebuild demo</dd>
+            <dt>Shipping</dt>
+            <dd>Simulated · Free</dd>
+            <dt>Tax</dt>
+            <dd>Not calculated</dd>
+          </dl>
+          <button
+            className="button secondary-button"
+            onClick={() => wish(p.id)}
+            aria-pressed={state.wishlist.includes(p.id)}
+          >
+            <Heart size={17} />
+            {state.wishlist.includes(p.id)
+              ? "Saved to wishlist"
+              : "Add to wishlist"}
+          </button>
+        </aside>
+      </div>
+      <section id="reviews" className="reviews-section">
+        <div>
+          <span className="eyebrow">A LITTLE PERSPECTIVE</span>
+          <h2>Sample customer reviews</h2>
+          <Rating rating={p.rating} count={p.ratingCount} />
+          <p className="muted">
+            Fictional reviews for demonstration.
+            <br />
+            These are not real customer endorsements.
+          </p>
+        </div>
+        <div className="review-cards">
+          {p.reviews.map((r, i) => (
+            <article key={i}>
+              <div className="review-avatar">{r.name.charAt(0)}</div>
+              <span>{r.name}</span>
+              <div className="stars" aria-label={`${r.rating} out of 5 stars`}>
+                {"★".repeat(r.rating)}
+              </div>
+              <h3>{r.title}</h3>
+              <p>{r.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="recommendations related">
+        <div className="section-heading">
+          <h2>A few more good finds</h2>
+          <Link className="text-link" to={`/products?category=${p.category}`}>
+            Explore more <ArrowRight size={15} />
+          </Link>
+        </div>
+        <ProductGrid
+          items={products
+            .filter(
+              (other) => other.category === p.category && other.id !== p.id,
+            )
+            .slice(0, 4)}
+        />
+      </section>
+    </div>
+  );
+}
+function Summary({ checkout = false }) {
+  const { state } = useShop();
+  return (
+    <aside className="order-summary">
+      <h2>Order summary</h2>
+      <p className="summary-benefit">
+        <CheckCircle2 size={18} />
+        Your demo order ships free
+      </p>
+      <dl>
+        <dt>Items ({countItems(state.cart)})</dt>
+        <dd>{money(totalCents(state.cart))}</dd>
+        <dt>Simulated shipping</dt>
+        <dd className="green">FREE</dd>
+        <dt>Tax</dt>
+        <dd>Not calculated</dd>
+      </dl>
+      <div className="summary-total">
+        <strong>Order total</strong>
+        <strong>{money(totalCents(state.cart))}</strong>
+      </div>
+      {!checkout && (
+        <Link to="/checkout" className="button yellow-button">
+          Proceed to checkout
+          <ChevronRight size={17} />
+        </Link>
+      )}
+      <p className="summary-disclaimer">
+        <ShieldCheck size={17} />
+        This is a demo. No payment is processed and nothing will be shipped.
+      </p>
+    </aside>
+  );
+}
+function CartLine({ item, saved = false }) {
+  const { state, dispatch, notify } = useShop();
+  const p = getProduct(item.id),
+    v = getVariant(p, item.variant),
+    key = itemKey(item.id, item.variant);
+  const atLimit =
+    (state.cart.find((i) => itemKey(i.id, i.variant) === key)?.quantity || 0) >=
+    v.stock;
+  return (
+    <article className="cart-line">
+      <Link to={`/products/${p.id}`} className="cart-product-image">
+        <img src={p.image} alt={p.title} />
+      </Link>
+      <div className="cart-product-info">
+        <Link to={`/products/${p.id}`} className="cart-title">
+          {p.title}
+        </Link>
+        <span className="in-stock small">In stock</span>
+        <p className="small">
+          Option: <strong>{v.name}</strong>
+        </p>
+        <p className="muted small">FREE simulated delivery</p>
+        <div className="cart-actions">
+          {!saved && (
+            <div className="quantity-stepper">
+              <button
+                aria-label={`Decrease ${p.title} quantity`}
+                disabled={item.quantity <= 1}
+                onClick={() =>
+                  dispatch({
+                    type: "QUANTITY",
+                    id: p.id,
+                    variant: v.id,
+                    quantity: item.quantity - 1,
+                  })
+                }
+              >
+                <Minus size={14} />
+              </button>
+              <span aria-label={`Quantity ${item.quantity}`}>
+                {item.quantity}
+              </span>
+              <button
+                aria-label={`Increase ${p.title} quantity`}
+                disabled={item.quantity >= v.stock}
+                onClick={() =>
+                  dispatch({
+                    type: "QUANTITY",
+                    id: p.id,
+                    variant: v.id,
+                    quantity: item.quantity + 1,
+                  })
+                }
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+          )}
+          <button
+            className="link-button"
+            onClick={() => {
+              dispatch({ type: saved ? "DELETE_SAVED" : "REMOVE", key });
+              notify("Item removed.");
+            }}
+          >
+            Remove
+          </button>
+          <button
+            className="link-button"
+            disabled={saved && atLimit}
+            onClick={() => {
+              dispatch({ type: saved ? "RESTORE" : "SAVE", key });
+              notify(
+                saved
+                  ? "Moved available quantity to cart."
+                  : "Saved for later.",
+              );
+            }}
+          >
+            {saved
+              ? atLimit
+                ? "Cart at stock limit"
+                : "Move to cart"
+              : "Save for later"}
+          </button>
+        </div>
+        {!saved && item.quantity === v.stock && (
+          <p className="small muted">Maximum available quantity: {v.stock}</p>
+        )}
+        {saved && (
+          <p className="small muted">Saved quantity: {item.quantity}</p>
+        )}
+      </div>
+      <strong className="line-price">{money(v.price * item.quantity)}</strong>
+    </article>
+  );
+}
+function Cart() {
+  const { state } = useShop();
+  return (
+    <div className="standard-page">
+      <div className="page-heading">
+        <span className="eyebrow">YOUR EVERYDAY FINDS</span>
+        <h1>
+          Shopping Cart <span>({countItems(state.cart)})</span>
+        </h1>
+      </div>
+      {state.cart.length ? (
+        <div className="shopping-layout">
+          <section className="white-panel">
+            <div className="cart-panel-top">
+              <span>Ready when you are.</span>
+              <span>Price</span>
+            </div>
+            {state.cart.map((item) => (
+              <CartLine key={itemKey(item.id, item.variant)} item={item} />
+            ))}
+            <div className="cart-subtotal">
+              Subtotal ({countItems(state.cart)} items):{" "}
+              <strong>{money(totalCents(state.cart))}</strong>
+            </div>
+          </section>
+          <Summary />
+        </div>
+      ) : (
+        <Empty headingLevel={2} title="Your cart is waiting for a good find.">
+          Discover a new favorite and make it part of your everyday.
+        </Empty>
+      )}
+      {state.saved.length > 0 && (
+        <section className="white-panel saved-section">
+          <h2>Saved for later ({state.saved.length})</h2>
+          {state.saved.map((item) => (
+            <CartLine key={itemKey(item.id, item.variant)} item={item} saved />
+          ))}
+        </section>
+      )}
+      <Link to="/products" className="text-link continue-shopping">
+        <ArrowLeft size={16} />
+        Continue exploring
+      </Link>
+    </div>
+  );
+}
+function Wishlist() {
+  const { state, wish, add } = useShop();
+  return (
+    <div className="standard-page">
+      <div className="page-heading">
+        <span className="eyebrow">KEEP THE GOOD FINDS CLOSE</span>
+        <h1>
+          Your wishlist <span>({state.wishlist.length})</span>
+        </h1>
+        <p>All your favorites, saved in this browser for another day.</p>
+      </div>
+      {state.wishlist.length ? (
+        <div className="wishlist-grid">
+          {state.wishlist.map((id) => {
+            const p = getProduct(id),
+              v = p.variants.find((v) => v.stock > 0);
+            return (
+              <div className="wishlist-card" key={id}>
+                <ProductCard product={p} />
+                <div className="wishlist-actions">
+                  {p.variants.length > 1 ? (
+                    <Link
+                      to={`/products/${id}`}
+                      className="button yellow-button"
+                    >
+                      Choose options
+                    </Link>
+                  ) : (
+                    <button
+                      className="button yellow-button"
+                      onClick={() => add(id, v.id)}
+                    >
+                      Add to Cart
+                    </button>
+                  )}
+                  <button className="link-button" onClick={() => wish(id)}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <Empty
+          headingLevel={2}
+          icon={Heart}
+          title="A home for your next favorites."
+        >
+          Tap a heart on any product to keep it here. Your wishlist is saved on
+          this browser.
+        </Empty>
+      )}
+    </div>
+  );
+}
+function Checkout() {
+  const { state, dispatch } = useShop();
+  const navigate = useNavigate();
+  const submitting = useRef(false);
+  const [placing, setPlacing] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    address: "",
+    city: "",
+    region: "",
+    postal: "",
+    country: "United States",
+  });
+  const [errors, setErrors] = useState({});
+  const formRef = useRef(null);
+  const fields = [
+    ["name", "Full name", "name"],
+    ["email", "Email address", "email"],
+    ["address", "Street address", "street-address"],
+    ["city", "City", "address-level2"],
+    ["region", "State / province", "address-level1"],
+    ["postal", "Postal code", "postal-code"],
+  ];
+  function submit(e) {
+    e.preventDefault();
+    if (submitting.current) return;
+    const next = {};
+    for (const [name, label] of fields)
+      if (!form[name].trim()) next[name] = `Enter your ${label.toLowerCase()}.`;
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      next.email = "Enter a valid email address.";
+    if (form.postal && form.postal.trim().length < 3)
+      next.postal = "Enter a postal code with at least 3 characters.";
+    setErrors(next);
+    if (Object.keys(next).length) {
+      requestAnimationFrame(() =>
+        formRef.current?.querySelector('[aria-invalid="true"]')?.focus(),
+      );
+      return;
+    }
+    submitting.current = true;
+    setPlacing(true);
+    const order = makeOrder(state.cart);
+    dispatch({ type: "ORDER", order });
+    setForm({
+      name: "",
+      email: "",
+      address: "",
+      city: "",
+      region: "",
+      postal: "",
+      country: "United States",
+    });
+    navigate(`/order-success/${order.id}`, { replace: true });
+  }
+  if (!state.cart.length)
+    return (
+      <div className="standard-page">
+        <Empty title="Let’s find something first.">
+          Add an item to your cart before starting your demo checkout.
+        </Empty>
+      </div>
+    );
+  return (
+    <div className="checkout-page">
+      <div className="checkout-heading">
+        <Link to="/cart" className="text-link">
+          <ArrowLeft size={15} />
+          Back to cart
+        </Link>
+        <h1>Demo checkout</h1>
+        <span>
+          <LockKeyhole size={16} />
+          No real payment
+        </span>
+      </div>
+      <div className="checkout-notice">
+        <ShieldCheck size={21} />
+        <div>
+          <strong>You’re trying a shopping simulation.</strong>
+          <p>
+            No payment is processed and nothing will be shipped. Use sample
+            details. Your address and email stay only in memory and are never
+            saved.
+          </p>
+        </div>
+      </div>
+      <div className="shopping-layout checkout-layout">
+        <form
+          ref={formRef}
+          className="checkout-form"
+          noValidate
+          onSubmit={submit}
+        >
+          <section className="white-panel checkout-step">
+            <div className="step-heading">
+              <span>1</span>
+              <h2>Shipping details</h2>
+            </div>
+            <div className="form-grid">
+              {fields.map(([name, label, auto]) => (
+                <div
+                  className={`form-field ${name === "address" ? "wide" : ""}`}
+                  key={name}
+                >
+                  <label htmlFor={name}>
+                    {label} <span aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id={name}
+                    name={name}
+                    autoComplete={auto}
+                    type={name === "email" ? "email" : "text"}
+                    value={form[name]}
+                    required
+                    aria-invalid={!!errors[name]}
+                    aria-describedby={
+                      errors[name] ? `${name}-error` : undefined
+                    }
+                    onChange={(e) =>
+                      setForm({ ...form, [name]: e.target.value })
+                    }
+                  />
+                  {errors[name] && (
+                    <span id={`${name}-error`} className="field-error">
+                      {errors[name]}
+                    </span>
+                  )}
+                </div>
+              ))}
+              <div className="form-field wide">
+                <label htmlFor="country">Country</label>
+                <select
+                  id="country"
+                  autoComplete="country-name"
+                  value={form.country}
+                  onChange={(e) =>
+                    setForm({ ...form, country: e.target.value })
+                  }
+                >
+                  <option>United States</option>
+                  <option>Philippines</option>
+                  <option>Canada</option>
+                  <option>United Kingdom</option>
+                  <option>Australia</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+          </section>
+          <section className="white-panel checkout-step">
+            <div className="step-heading">
+              <span>2</span>
+              <h2>Demo payment</h2>
+            </div>
+            <label className="payment-option">
+              <input type="radio" checked readOnly name="payment" />
+              <div>
+                <strong>Simulated payment</strong>
+                <small>No card details. No charges. Just a demo.</small>
+              </div>
+              <ShieldCheck size={24} />
+            </label>
+          </section>
+          <section className="white-panel checkout-step">
+            <div className="step-heading">
+              <span>3</span>
+              <h2>Review your finds</h2>
+            </div>
+            {state.cart.map((i) => {
+              const p = getProduct(i.id),
+                v = getVariant(p, i.variant);
+              return (
+                <div className="checkout-item" key={itemKey(i.id, i.variant)}>
+                  <img src={p.image} alt={p.title} />
+                  <div>
+                    <strong>{p.title}</strong>
+                    <span>
+                      {v.name} · Quantity: {i.quantity}
+                    </span>
+                    <span className="green">Free simulated shipping</span>
+                  </div>
+                  <b>{money(v.price * i.quantity)}</b>
+                </div>
+              );
+            })}
+            <div className="place-order">
+              <button
+                className="button yellow-button"
+                disabled={placing}
+                type="submit"
+              >
+                {placing ? "Placing demo order…" : "Place demo order"}
+                <ArrowRight size={18} />
+              </button>
+              <p>No payment will be processed. No items will be shipped.</p>
+            </div>
+          </section>
+        </form>
+        <Summary checkout />
+      </div>
+    </div>
+  );
+}
+function OrderItems({ order }) {
+  return (
+    <div>
+      {order.items.map((i, index) => (
+        <div className="order-item" key={`${i.id}-${i.variant}-${index}`}>
+          <Link to={`/products/${i.id}`}>
+            <img src={i.image} alt={i.title} />
+          </Link>
+          <div>
+            <Link to={`/products/${i.id}`}>
+              <strong>{i.title}</strong>
+            </Link>
+            <p className="muted small">
+              {i.variant} · Quantity: {i.quantity}
+            </p>
+          </div>
+          <strong>{money(i.price * i.quantity)}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+function OrderSuccess() {
+  const { id } = useParams();
+  const { state } = useShop();
+  const order = state.orders.find((o) => o.id === id);
+  if (!order) return <NotFound title="We couldn’t find that demo order." />;
+  return (
+    <div className="success-page">
+      <div className="success-heading">
+        <span>
+          <Check size={38} />
+        </span>
+        <p className="eyebrow">A GOOD FIND, ALL THE WAY THROUGH</p>
+        <h1>Your demo order is in!</h1>
+        <p>
+          You’ve completed the shopping journey.
+          <br />
+          No payment was processed and nothing will be shipped.
+        </p>
+      </div>
+      <section className="white-panel confirmation">
+        <div className="confirmation-top">
+          <div>
+            <span className="muted small">DEMO ORDER</span>
+            <strong>{order.id.slice(-8).toUpperCase()}</strong>
+          </div>
+          <div>
+            <span className="muted small">ORDER TOTAL</span>
+            <strong>{money(order.total)}</strong>
+          </div>
+          <span className="status-badge">
+            <Check size={14} />
+            Simulated
+          </span>
+        </div>
+        <OrderItems order={order} />
+        <div className="confirmation-bottom">
+          <Link to={`/orders/${order.id}`} className="button yellow-button">
+            View order details
+            <ArrowRight size={17} />
+          </Link>
+          <Link to="/products" className="text-link">
+            Keep exploring
+          </Link>
+        </div>
+      </section>
+      <p className="muted small text-center">
+        Saved on this browser. Personal checkout details were not saved.
+      </p>
+    </div>
+  );
+}
+function Orders() {
+  const { state } = useShop();
+  return (
+    <div className="standard-page orders-page">
+      <div className="page-heading">
+        <span className="eyebrow">YOUR FINDS, ALL IN ONE PLACE</span>
+        <h1>Your demo orders</h1>
+        <p>Saved in this browser. Every order here is a simulation.</p>
+      </div>
+      {state.orders.length ? (
+        state.orders.map((order) => (
+          <article className="order-card" key={order.id}>
+            <header>
+              <div>
+                <small>ORDER PLACED</small>
+                <span>
+                  {new Date(order.createdAt).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+              <div>
+                <small>TOTAL</small>
+                <span>{money(order.total)}</span>
+              </div>
+              <div className="order-card-id">
+                <small>ORDER #{order.id.slice(-8).toUpperCase()}</small>
+                <Link to={`/orders/${order.id}`}>
+                  View order details <ChevronRight size={14} />
+                </Link>
+              </div>
+            </header>
+            <div className="order-card-body">
+              <span className="status-badge">
+                <Check size={14} />
+                Simulated order placed
+              </span>
+              <OrderItems order={order} />
+            </div>
+          </article>
+        ))
+      ) : (
+        <Empty
+          headingLevel={2}
+          icon={Package}
+          title="Your story starts with a good find."
+        >
+          Complete a demo checkout and your order will appear here. No sign-in
+          needed.
+        </Empty>
+      )}
+    </div>
+  );
+}
+function OrderDetail() {
+  const { id } = useParams();
+  const { state } = useShop();
+  const order = state.orders.find((o) => o.id === id);
+  if (!order) return <NotFound title="We couldn’t find that demo order." />;
+  return (
+    <div className="standard-page orders-page">
+      <Link to="/orders" className="text-link">
+        <ArrowLeft size={16} />
+        All demo orders
+      </Link>
+      <div className="page-heading">
+        <h1>Order details</h1>
+        <p>
+          Order #{order.id.slice(-8).toUpperCase()} ·{" "}
+          {new Date(order.createdAt).toLocaleString("en-US")}
+        </p>
+      </div>
+      <div className="checkout-notice">
+        <ShieldCheck />
+        <p>
+          This is a simulated order. No payment was processed and nothing will
+          be shipped. Personal details are not stored.
+        </p>
+      </div>
+      <section className="white-panel">
+        <span className="status-badge">
+          <Check size={14} />
+          {order.status}
+        </span>
+        <OrderItems order={order} />
+        <div className="order-detail-totals">
+          <p>
+            Simulated shipping <strong>FREE</strong>
+          </p>
+          <p>
+            Tax <span>Not calculated</span>
+          </p>
+          <p>
+            <strong>Order total</strong>
+            <strong>{money(order.total)}</strong>
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+function Account() {
+  const { state, dispatch, notify } = useShop();
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div className="standard-page account-page">
+      <div className="page-heading">
+        <span className="eyebrow">MAKE YOURSELF AT HOME</span>
+        <h1>Your demo account</h1>
+        <p>No password, no sign-in. Just your finds, saved in this browser.</p>
+      </div>
+      <div className="account-cards">
+        <Link to="/orders">
+          <Package />
+          <div>
+            <h2>Your orders</h2>
+            <p>
+              {state.orders.length} demo orders · View your shopping journey
+            </p>
+          </div>
+          <ChevronRight />
+        </Link>
+        <Link to="/wishlist">
+          <Heart />
+          <div>
+            <h2>Your wishlist</h2>
+            <p>{state.wishlist.length} favorites · Keep a little inspiration</p>
+          </div>
+          <ChevronRight />
+        </Link>
+        <Link to="/cart">
+          <ShoppingCart />
+          <div>
+            <h2>Your cart</h2>
+            <p>{countItems(state.cart)} items · Pick up where you left off</p>
+          </div>
+          <ChevronRight />
+        </Link>
+      </div>
+      <section className="white-panel about-demo">
+        <ShieldCheck size={30} />
+        <div>
+          <h2>A real experience. A simulated purchase.</h2>
+          <p>
+            This independent educational project explores a complete shopping
+            journey. Product details, USD prices, ratings and reviews are
+            samples. Orders, delivery and payment are simulated. It is not
+            affiliated with Amazon.
+          </p>
+          <p>
+            Only your cart, saved products, wishlist and non-sensitive order
+            details are stored in this browser. Your checkout name, email and
+            address are kept in memory only and are discarded when you leave
+            checkout.
+          </p>
+        </div>
+      </section>
+      <section className="reset-panel">
+        <div>
+          <h2>A fresh start</h2>
+          <p>
+            Clear this demo’s cart, saved items, wishlist and order history.
+          </p>
+        </div>
+        {!confirm ? (
+          <button
+            className="button secondary-button"
+            onClick={() => setConfirm(true)}
+          >
+            <RotateCcw size={16} />
+            Reset demo data
+          </button>
+        ) : (
+          <div className="reset-confirm" role="alert">
+            <strong>Clear all demo data on this browser?</strong>
+            <button
+              className="button danger-button"
+              onClick={() => {
+                dispatch({ type: "RESET" });
+                setConfirm(false);
+                notify("Demo data cleared. A fresh start!");
+              }}
+            >
+              Yes, reset demo data
+            </button>
+            <button className="link-button" onClick={() => setConfirm(false)}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+function NotFound({ title = "This page took a little detour." }) {
+  return (
+    <div className="standard-page">
+      <Empty icon={Search} title={title} action="Back to exploring">
+        The link may be outdated, or the item may not be saved on this browser.
+        There are still plenty of good finds waiting.
+      </Empty>
+    </div>
+  );
+}
+function ScrollAndFocus() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.getElementById("main")?.focus({ preventScroll: true });
+  }, [pathname]);
+  return null;
+}
+export default function App() {
+  const { notice, warning } = useShop();
+  return (
+    <>
+      <Header />
+      <ScrollAndFocus />
+      {warning && (
+        <div role="alert" className="storage-warning">
+          {warning}
+        </div>
+      )}
+      <main id="main" tabIndex={-1}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Catalog />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success/:id" element={<OrderSuccess />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
+      <div
+        className={`toast ${notice ? "visible" : ""}`}
+        role="status"
+        aria-live="polite"
+      >
+        {notice && (
+          <>
+            <CheckCircle2 size={21} />
+            <span>{notice.text}</span>
+            <Link to="/cart">View cart</Link>
+          </>
+        )}
+      </div>
+    </>
+  );
+}

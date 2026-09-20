@@ -25,3 +25,5 @@ Product and lifestyle photos are downloaded from Unsplash, used under the [Unspl
 | `hero.jpg` | https://images.unsplash.com/photo-1600210492486-724fe5c67fb0 |
 
 Book cover SVGs are original vector artwork created for this educational demo; released with this project under MIT. Amazon reference screenshots in docs/recon are research evidence, not storefront assets. Amazon trademarks remain with their owners.
+
+Files ending `-detail.jpg` are center crops of the matching credited original photo, made locally for the product gallery. They are labeled as detail crops, not alternate angles or variant photos.

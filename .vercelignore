@@ -1,0 +1,6 @@
+docs/recon/
+docs/qa/
+playwright-report/
+test-results/
+.capture/
+scripts/

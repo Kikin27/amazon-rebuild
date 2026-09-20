@@ -93,3 +93,5 @@ Received again: **CAPTURE TEST — 8x assignment, Kikin27 — session 2**.
 ## Authenticated author verification
 
 GitHub CLI authorization completed later in the same development session. `gh api user --jq .login` returned `Kikin27`, matching the capture author. Original captured entries were not changed.
+
+The failed LaunchAgent installation was removed from `~/Library/LaunchAgents/` after testing, so it will not repeatedly attempt Documents access on future logins. The failed configuration remains in the repository as evidence.
