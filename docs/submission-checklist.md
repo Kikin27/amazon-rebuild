@@ -10,7 +10,7 @@
 - [x] Public production homepage and direct routes tested while unauthenticated.
 - [x] Public GitHub repository: https://github.com/Kikin27/amazon-rebuild
 - [x] Verified live URL entered in README and GitHub website field.
-- [ ] Latest completed final response captured, committed and pushed in a later turn.
+- [x] Latest completed implementation final response automatically captured and verified after the implementation task became idle; committed and pushed with this checklist update.
 - [ ] User personally tries the live checkout.
 - [ ] User records a camera-on walkthrough under five minutes.
 - [ ] Shared video URL opens for a signed-out evaluator.
