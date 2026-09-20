@@ -1,0 +1,6 @@
+{
+  "name": "amazon-rebuild", "version": "1.0.0", "private": true, "type": "module",
+  "scripts": {"dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview --host 127.0.0.1", "lint": "eslint .", "test": "node --test tests/*.test.js", "test:browser": "playwright test", "capture:start": "python3 scripts/start-capture.py"},
+  "dependencies": {"react":"^19.1.1", "react-dom":"^19.1.1", "react-router-dom":"^7.9.0", "lucide-react":"^0.468.0"},
+  "devDependencies": {"vite":"^7.1.5", "@vitejs/plugin-react":"^5.0.3", "eslint":"^9.35.0", "@eslint/js":"^9.35.0", "eslint-plugin-react-hooks":"^5.2.0", "globals":"^16.4.0", "@playwright/test":"^1.55.0"}
+}

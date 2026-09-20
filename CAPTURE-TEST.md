@@ -89,3 +89,7 @@ model: gpt-6-astra
 
 Received again: **CAPTURE TEST — 8x assignment, Kikin27 — session 2**.
 ```
+
+## Authenticated author verification
+
+GitHub CLI authorization completed later in the same development session. `gh api user --jq .login` returned `Kikin27`, matching the capture author. Original captured entries were not changed.
