@@ -3,7 +3,7 @@
 An independent educational shopping demo inspired by Amazon's dense catalogue, prominent search, product imagery and purchase flow. Built with React, Vite, JavaScript, plain CSS and React Router.
 
 - **Public repository:** https://github.com/Kikin27/amazon-rebuild
-- **Live website:** Deployment in progress; verified production URL will be added here.
+- **Live website:** https://amazon-rebuild-lilac.vercel.app
 - **Capture evidence:** [CAPTURE-TEST.md](CAPTURE-TEST.md)
 - **Research:** [Observed flows and boundaries](docs/research.md) · [Reference screenshots](docs/recon/)
 - **Decisions:** [Product and architecture choices](docs/decisions.md)
@@ -78,6 +78,8 @@ The independent collector then automatically observes current and fresh tasks. I
 The transcript schema is implementation-specific. This extractor is verified against Codex Desktop 0.155.0-alpha.9.2; reverify after tool upgrades. `scripts/codex-captured` is an optional CLI startup wrapper, not the mechanism used for the Desktop canaries; CLI transcript compatibility must be verified separately before switching tools.
 
 ## Deployment
+
+The public production site is https://amazon-rebuild-lilac.vercel.app. Vercel is connected to `Kikin27/amazon-rebuild` for deployments from `main`.
 
 `vercel.json` rewrites direct routes to `/index.html`. Import this repository into Vercel with Vite, build `npm run build`, output `dist`, production branch `main`, and no environment variables. Use the repository root. Production access must be verified while signed out; a successful authenticated preview alone is insufficient.
 

@@ -15,11 +15,13 @@ Initial lint caught an unused mapping. The first browser run found a search-inpu
 
 ## Visual review
 
-Desktop storefront reviewed in the actual Codex browser. True breakpoint captures come from Playwright with explicit viewports because Codex's viewport override did not reliably apply to the chosen tab. The mobile full-page screenshot was visually inspected: header/search stack, two-column department cards and product cards, wrapped banner copy and footer all fit without clipping. Tablet and checkout/product/cart captures are reviewed below as verification continues.
+Desktop storefront reviewed in the actual Codex browser. True breakpoint captures come from Playwright with explicit viewports because Codex's viewport override did not reliably apply to the chosen tab. The mobile full-page screenshot was visually inspected: header/search stack, two-column department cards and product cards, wrapped banner copy and footer all fit without clipping. Refreshed tablet home and desktop/mobile product and populated checkout captures were visually reviewed: images load, content stacks correctly, controls remain readable, and no document clipping was observed. Populated cart and tablet checkout were also reviewed.
 
 ## Production checks
 
-Deployment and unauthenticated verification are in progress. Production results will be recorded here after actual checks.
+On September 20, 2026, all **12 browser tests passed** against https://amazon-rebuild-lilac.vercel.app using fresh unauthenticated desktop and mobile Chromium contexts (two workers, 18.5 seconds). This includes the additional gallery, stock-cap and Buy Now tests. Public homepage and direct product routes returned HTTP 200. GitHub repository visibility is public and its website field points to this production URL.
+
+The first production run exposed an ambiguous quantity label in the new test and a mobile navigation timeout. The quantity select now has an explicit associated label; the complete production suite passed after deploying that fix and using two workers. Screenshot capture now waits for home images to decode, correcting prematurely blank tablet captures.
 
 ## Limits
 

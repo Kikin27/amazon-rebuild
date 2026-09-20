@@ -6,10 +6,10 @@
 - [x] Signed-out Amazon research screenshots and explicit blocked/unvisited flows.
 - [x] 24 products, four departments, local images and source credits.
 - [x] Complete simulated shopping journey; no real login/payment/backend.
-- [ ] Final lint, unit tests, browser suite and production build verified.
-- [ ] Public production homepage and direct routes tested while unauthenticated.
+- [x] Final lint, unit tests, browser suite and production build verified.
+- [x] Public production homepage and direct routes tested while unauthenticated.
 - [x] Public GitHub repository: https://github.com/Kikin27/amazon-rebuild
-- [ ] Verified live URL entered in README and GitHub website field.
+- [x] Verified live URL entered in README and GitHub website field.
 - [ ] Latest completed final response captured, committed and pushed in a later turn.
 - [ ] User personally tries the live checkout.
 - [ ] User records a camera-on walkthrough under five minutes.
@@ -17,7 +17,7 @@
 - [ ] User submits the recording in the walkthrough field and labeled links below.
 
 ```text
-Live website: [verified production URL]
+Live website: https://amazon-rebuild-lilac.vercel.app
 Public GitHub repository: https://github.com/Kikin27/amazon-rebuild
 ```
 
